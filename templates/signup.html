@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}회원가입{% endblock %}
+{% block content %}
+  <section class="panel narrow">
+    <h1>회원가입</h1>
+    <form action="/signup" method="post">
+      <label for="username">아이디</label>
+      <input id="username" name="username" value="{{ form.username | default('', true) }}" required>
+      {% if errors.username %}<p class="field-error">{{ errors.username }}</p>{% endif %}
+
+      <label for="display_name">표시 이름</label>
+      <input id="display_name" name="display_name" value="{{ form.display_name | default('', true) }}" required>
+      {% if errors.display_name %}<p class="field-error">{{ errors.display_name }}</p>{% endif %}
+
+      <label for="password">비밀번호</label>
+      <input id="password" name="password" type="password" minlength="8" required>
+      {% if errors.password %}<p class="field-error">{{ errors.password }}</p>{% endif %}
+
+      <div class="actions">
+        <button type="submit">가입하고 시작하기</button>
+        <a class="button secondary" href="/login">로그인으로</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}코드 도서관 홈{% endblock %}
+{% block content %}
+  <section class="hero panel">
+    <p class="eyebrow">FastAPI SSR Library</p>
+    <h1>로그인부터 반납까지 이어지는 도서 대여 서비스</h1>
+    <p>도서를 등록하고, 관계형 DB에 대여 기록을 남기고, 대여중 상태를 반납완료로 변경합니다.</p>
+    {% if current_user %}
+      <a class="button" href="/app">대여 관리 화면으로</a>
+    {% else %}
+      <div class="actions">
+        <a class="button" href="/login">로그인</a>
+        <a class="button secondary" href="/signup">회원가입</a>
+      </div>
+      <p class="muted">비로그인 사용자는 대여 관리 화면에 접근할 수 없습니다.</p>
+    {% endif %}
+  </section>
+{% endblock %}

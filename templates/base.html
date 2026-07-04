@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}코드 도서관{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+  </head>
+  <body>
+    <header>
+      <div class="nav">
+        <a class="brand" href="/">코드 도서관</a>
+        <nav>
+          {% if current_user %}
+            <a href="/app">대여 관리</a>
+            <span>{{ current_user.display_name }}님 환영합니다</span>
+            <form class="inline" action="/logout" method="post">
+              <button class="link-button" type="submit">로그아웃</button>
+            </form>
+          {% else %}
+            <a href="/login">로그인</a>
+            <a href="/signup">회원가입</a>
+          {% endif %}
+        </nav>
+      </div>
+    </header>
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

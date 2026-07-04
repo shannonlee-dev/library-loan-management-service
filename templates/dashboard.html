@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}대여 관리{% endblock %}
+{% block content %}
+  {% if message %}<p class="alert success">{{ message }}</p>{% endif %}
+
+  <section class="panel">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Catalog</p>
+        <h1>도서 목록과 현재 대여 관계</h1>
+      </div>
+      <form class="search" action="/app" method="get">
+        <input name="q" value="{{ q }}" placeholder="제목, 저자, 설명 검색">
+        <button type="submit">검색</button>
+        <a class="button secondary" href="/app">초기화</a>
+      </form>
+    </div>
+    {% if books %}
+      <div class="card-grid">
+        {% for book in books %}
+          {% set active = book.loans | selectattr("status", "equalto", "borrowed") | list %}
+          <article class="book-card">
+            <h2>{{ book.title }}</h2>
+            <p class="muted">{{ book.author }}</p>
+            <p>{{ book.description or "설명 없음" }}</p>
+            {% if active %}
+              <p class="badge borrowed">대여중: {{ active[0].user.display_name }}</p>
+            {% else %}
+              <p class="badge available">대여 가능</p>
+              <form action="/app/books/{{ book.id }}/borrow" method="post">
+                <button type="submit">이 도서 대여하기</button>
+              </form>
+            {% endif %}
+            {% if book.loans %}
+              <p class="relation">누적 대여 기록 {{ book.loans | length }}건</p>
+            {% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">검색 조건에 맞는 도서가 없습니다.</p>
+    {% endif %}
+  </section>
+
+  <section class="two-column">
+    <div class="panel">
+      <p class="eyebrow">Create</p>
+      <h2>새 도서 등록</h2>
+      <form action="/app/books" method="post">
+        <label for="title">제목</label>
+        <input id="title" name="title" required>
+        <label for="author">저자</label>
+        <input id="author" name="author" required>
+        <label for="description">설명</label>
+        <textarea id="description" name="description" rows="4"></textarea>
+        <div class="actions"><button type="submit">도서 등록</button></div>
+      </form>
+    </div>
+
+    <div class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">My Loans</p>
+          <h2>{{ current_user.display_name }}님의 대여 기록</h2>
+        </div>
+        <form action="/app" method="get">
+          <select name="status">
+            <option value="">전체 상태</option>
+            <option value="borrowed" {% if status == "borrowed" %}selected{% endif %}>대여중</option>
+            <option value="returned" {% if status == "returned" %}selected{% endif %}>반납완료</option>
+          </select>
+          <button type="submit">필터</button>
+        </form>
+      </div>
+      {% if loans %}
+        <table>
+          <thead>
+            <tr><th>도서</th><th>상태</th><th>처리</th></tr>
+          </thead>
+          <tbody>
+            {% for loan in loans %}
+              <tr>
+                <td>{{ loan.book.title }} <span class="muted">({{ loan.book.author }})</span></td>
+                <td>
+                  {% if loan.status == "borrowed" %}
+                    <span class="badge borrowed">대여중</span>
+                  {% else %}
+                    <span class="badge returned">반납완료</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if loan.status == "borrowed" %}
+                    <form action="/app/loans/{{ loan.id }}/return" method="post">
+                      <button type="submit">반납하기</button>
+                    </form>
+                  {% else %}
+                    {{ loan.returned_at }}
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="muted">조건에 맞는 대여 기록이 없습니다.</p>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

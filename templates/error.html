@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}오류 안내{% endblock %}
+{% block content %}
+  <section class="panel narrow">
+    <p class="eyebrow">Error {{ status_code }}</p>
+    <h1>요청을 처리할 수 없습니다.</h1>
+    <p class="alert error">{{ message }}</p>
+    <div class="actions">
+      <a class="button" href="/app">대여 관리로</a>
+      <a class="button secondary" href="/">홈으로</a>
+    </div>
+  </section>
+{% endblock %}
