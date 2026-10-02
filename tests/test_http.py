@@ -81,3 +81,57 @@ def test_signup_book_loan_return_and_logout(client, web_database):
     logout = client.post("/logout")
     assert logout.status_code == 200 and "로그인" in logout.text
     assert client.get("/app", follow_redirects=False).status_code == 303
+
+
+@pytest.mark.parametrize(
+    "path", ["/app/books", "/app/books/1/borrow", "/app/loans/1/return"]
+)
+def test_anonymous_users_cannot_mutate_library(client, path):
+    response = client.post(path, follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"] == "/login"
+
+
+def test_failed_signup_and_book_creation_do_not_write(client, web_database):
+    with web_database() as db:
+        user_ids = list(db.scalars(select(User.id)))
+        book_ids = list(db.scalars(select(Book.id)))
+    signup = client.post(
+        "/signup", data={"username": "x", "display_name": "", "password": "short"}
+    )
+    assert signup.status_code == 400
+    client.post("/login", data={"username": "demo", "password": "demo1234"})
+    response = client.post("/app/books", data={"title": " ", "author": " "})
+    assert response.status_code == 400
+    assert "도서 제목과 저자는 필수" in response.text
+    with web_database() as db:
+        assert list(db.scalars(select(User.id))) == user_ids
+        assert list(db.scalars(select(Book.id))) == book_ids
+
+
+def test_http_loan_failures_preserve_ownership_and_status(client, web_database):
+    client.post("/login", data={"username": "demo", "password": "demo1234"})
+    with web_database() as db:
+        book_id = db.scalar(select(Book.id).order_by(Book.id))
+    assert client.post(f"/app/books/{book_id}/borrow").status_code == 200
+    with web_database() as db:
+        loan_id = db.scalar(select(Loan.id).where(Loan.book_id == book_id))
+    client.post("/logout")
+    client.post(
+        "/signup",
+        data={
+            "username": "another",
+            "display_name": "다른 사용자",
+            "password": "password123",
+        },
+    )
+    assert client.post(f"/app/books/{book_id}/borrow").status_code == 400
+    assert client.post(f"/app/loans/{loan_id}/return").status_code == 403
+    assert client.post("/app/loans/999999/return").status_code == 404
+    with web_database() as db:
+        assert db.get(Loan, loan_id).status == "borrowed"
+        assert len(list(db.scalars(select(Loan)))) == 1
+    client.post("/logout")
+    client.post("/login", data={"username": "demo", "password": "demo1234"})
+    assert client.post(f"/app/loans/{loan_id}/return").status_code == 200
+    assert client.post(f"/app/loans/{loan_id}/return").status_code == 400

@@ -5,6 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from library_service.core.database import Base
+from library_service.models import Book, Loan, User
 from library_service.services import auth_service, library_service
 
 
@@ -42,3 +43,18 @@ def test_loan_ownership_and_transitions(db):
     with pytest.raises(library_service.LibraryError):
         library_service.return_loan(db, first, loan.id)
     assert library_service.borrow_book(db, second, book.id).status == "borrowed"
+
+
+@pytest.mark.parametrize("removed_model", [User, Book])
+def test_deleting_user_or_book_removes_orphan_loan_history(db, removed_model):
+    user, _ = auth_service.register_user(db, "reader", "독자", "password123")
+    book = library_service.create_book(db, "도서", "저자", "설명")
+    loan = library_service.borrow_book(db, user, book.id)
+    loan_id = loan.id
+    removed = user if removed_model is User else book
+    survivor_model = Book if removed_model is User else User
+    survivor_id = book.id if removed_model is User else user.id
+    db.delete(removed)
+    db.commit()
+    assert db.get(Loan, loan_id) is None
+    assert db.get(survivor_model, survivor_id) is not None

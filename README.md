@@ -10,7 +10,7 @@ FastAPI, SQLAlchemy, Jinja2로 만든 세션 기반 도서 대여 웹 서비스�
 - 로그인 사용자만 접근하는 대여 관리 화면
 - 사용자·도서·대여 기록의 ORM 연관관계
 - 도서 검색, 대여 상태 필터, 대여·반납 상태 전환
-- 전역 예외 처리와 기존 전체 흐름 검증 스크립트
+- 전역 예외 처리와 pytest의 인증·대여·반납 흐름 검증
 
 ## 아키텍처
 
@@ -89,6 +89,6 @@ make smoke
 make build
 ```
 
-pytest fixture가 매 테스트마다 임시 SQLite DB와 FastAPI `TestClient`를 제공합니다. 인증·보호 경로·비밀번호 해시·등록·대여·반납·검색·실패 응답을 확인하며 실제 `library.db`는 사용하지 않습니다.
+pytest fixture가 매 테스트마다 임시 SQLite DB와 FastAPI `TestClient`를 제공합니다. 인증·보호 경로·비밀번호 해시·등록·대여·반납·검색·실패 응답을 확인하며 실제 `library.db`는 사용하지 않습니다. 비로그인 변경 요청 거부, 잘못된 입력의 저장 방지, 중복 대여·타인 반납·반복 반납 실패와 관계 삭제 시 대여 기록 정리도 검사합니다.
 
-`make check`는 정적 분석·포맷·문서 검사를, `make test`는 `uv run --frozen pytest -q`로 전체 동작 검사를 실행합니다. `make smoke`는 같은 테스트 중 `smoke` 마커가 붙은 실행 확인만 선택합니다(`uv run --frozen pytest -q -m smoke`). 테스트는 `test_*.py`와 fixture로 구성하며 임시 DB·파일과 모의 요청을 사용합니다.
+`make check`는 정적 분석·포맷·문서 검사를, `make test`는 `uv run --frozen pytest -q`로 저장소의 전체 pytest suite를 실행합니다. `make smoke`는 같은 테스트 중 `smoke` 마커가 붙은 HTTP 확인을 선택합니다(`uv run --frozen pytest -q -m smoke`). 테스트는 임시 DB와 모의 HTTP 요청을 사용합니다. 동시 대여 경합·DB 장애·실제 브라우저 배치까지 검증하는 것은 아닙니다.
