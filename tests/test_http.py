@@ -8,6 +8,15 @@ from library_service.models import Book, Loan, User
 pytestmark = pytest.mark.smoke
 
 
+def test_logout_without_login_is_repeatable_and_post_only(client):
+    for _ in range(2):
+        response = client.post("/logout", follow_redirects=False)
+        assert response.status_code == 303
+        assert response.headers["location"].startswith("/?message=")
+        assert client.get("/app", follow_redirects=False).status_code == 303
+    assert client.get("/logout").status_code == 405
+
+
 def test_public_pages_and_protected_access(client):
     home = client.get("/")
     assert home.status_code == 200
