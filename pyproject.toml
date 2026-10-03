@@ -8,7 +8,7 @@ dependencies = ["fastapi>=0.110", "uvicorn>=0.29", "sqlalchemy>=2.0", "jinja2>=3
 
 
 [dependency-groups]
-dev = ["httpx", "pytest>=8,<9", "ruff"]
+dev = ["httpx", "pytest>=8,<10", "ruff"]
 
 [build-system]
 requires = ["hatchling>=1.27,<2"]
