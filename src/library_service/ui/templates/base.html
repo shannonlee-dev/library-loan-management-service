@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}코드 도서관{% endblock %}</title>
     <link rel="stylesheet" href="/static/style.css">
+    {% if request.app.debug %}
+      <link rel="stylesheet" href="/_dev/debug.css">
+      <script type="module" src="/_dev/debug.js"></script>
+    {% endif %}
   </head>
   <body>
     <header>

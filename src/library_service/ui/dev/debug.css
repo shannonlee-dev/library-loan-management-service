@@ -1,0 +1,145 @@
+body:has(library-debug-tools) main {
+  padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+}
+
+library-debug-tools {
+  position: fixed;
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  left: max(16px, env(safe-area-inset-left, 0px));
+  z-index: 30;
+  color: #1d2733;
+  font: 14px/1.5 Arial, "Noto Sans KR", sans-serif;
+}
+
+library-debug-tools [hidden] {
+  display: none !important;
+}
+
+library-debug-tools button {
+  font: inherit;
+}
+
+library-debug-tools button:focus-visible {
+  outline: 3px solid #0f766e;
+  outline-offset: 4px;
+}
+
+library-debug-tools .debug-toggle {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid #52616b;
+  border-radius: 50%;
+  background: #15384c;
+  box-shadow: 0 3px 12px #15384c26;
+  font-weight: 800;
+}
+
+library-debug-tools .debug-badge {
+  position: absolute;
+  top: -7px;
+  right: -9px;
+  min-width: 20px;
+  padding: 1px 4px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #b91c1c;
+  color: #fff;
+  font-size: 11px;
+}
+
+library-debug-tools .debug-panel {
+  position: absolute;
+  bottom: 56px;
+  left: 0;
+  box-sizing: border-box;
+  width: min(360px, calc(100vw - 32px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+  max-height: calc(100dvh - 104px - env(safe-area-inset-bottom, 0px) - env(safe-area-inset-top, 0px));
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 18px;
+  border: 1px solid #d9e2e8;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 28px #15384c26;
+}
+
+library-debug-tools .debug-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+library-debug-tools h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+library-debug-tools h3 {
+  margin: 16px 0 8px;
+  font-size: 14px;
+}
+
+library-debug-tools .debug-close,
+library-debug-tools .debug-clear {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 6px 10px;
+  background: #e9eff2;
+  color: #15384c;
+  font-size: 12px;
+}
+
+library-debug-tools .debug-mode {
+  display: inline-block;
+  margin-top: 10px;
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+library-debug-tools code {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+library-debug-tools .debug-errors {
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+library-debug-tools .debug-errors li {
+  padding: 10px 0;
+  border-top: 1px solid #d9e2e8;
+}
+
+library-debug-tools time {
+  display: block;
+  color: #65737e;
+  font-size: 12px;
+}
+
+library-debug-tools .debug-errors strong {
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+library-debug-tools .debug-errors p {
+  margin: 4px 0;
+}
+
+library-debug-tools .debug-note,
+library-debug-tools .debug-empty {
+  color: #65737e;
+  font-size: 12px;
+}
+
+library-debug-tools .debug-note {
+  margin-bottom: 0;
+}

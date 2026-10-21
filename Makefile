@@ -1,4 +1,4 @@
-.PHONY: setup check format test smoke build run
+.PHONY: setup check format test smoke build run dev
 
 setup:
 	uv sync --frozen
@@ -23,3 +23,6 @@ build:
 
 run:
 	uv run --frozen uvicorn library_service.main:app --host 127.0.0.1 --port 8000
+
+dev:
+	LIBRARY_ENV=development uv run --frozen uvicorn library_service.main:app --reload --host 127.0.0.1 --port 8000

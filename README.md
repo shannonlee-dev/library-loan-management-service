@@ -63,6 +63,9 @@ uv run --frozen uvicorn library_service.main:app --host 127.0.0.1 --port 8000
 | --- | --- |
 | `LIBRARY_DATABASE_URL` | 미설정 시 레포의 `library.db` 사용 |
 | `SESSION_SECRET_KEY` | 세션 서명 키; 개발용 기본값 대신 직접 지정 |
+| `LIBRARY_ENV` | 기본은 개발 도구 비활성화; `development`일 때만 디버그 버튼과 자산 경로 제공 |
+
+개발 중에는 `make dev`로 실행하면 자동 재시작과 왼쪽 아래 `D` 디버그 버튼이 켜집니다. 버튼을 열면 가려진 현재 경로와 브라우저 오류의 시각·종류·안전한 요약을 확인하고 기록을 지울 수 있습니다. Enter/Space로 열고 Escape로 닫습니다. 오류 원문과 스택, 검색어와 URL query/hash는 수집하지 않습니다. 최근 50개 기록만 현재 문서 메모리에 유지하며 페이지 이동·새로고침 시 초기화합니다. 서버 오류 로그는 터미널에서 확인합니다. 배포 실행에서는 `LIBRARY_ENV`를 설정하지 않거나 `production`으로 두면 UI와 수집기를 로드하지 않고 개발 자산 경로도 제공하지 않습니다.
 
 최초 DB 초기화에서 샘플 도서와 데모 계정 `demo` / `demo1234`를 만듭니다. 이 계정과 현재 쿠키 정책은 실습용 설정입니다.
 

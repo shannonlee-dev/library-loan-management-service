@@ -22,7 +22,9 @@ from library_service.ui.errors import (
 def create_app() -> FastAPI:
     """기존 초기화 순서·라우터·세션 정책으로 앱을 만든다."""
     initialize_database()
-    application = FastAPI(title="코드 도서관")
+    application = FastAPI(
+        title="코드 도서관", debug=os.getenv("LIBRARY_ENV") == "development"
+    )
     application.add_middleware(
         SessionMiddleware,
         secret_key=os.getenv("SESSION_SECRET_KEY", "development-only-change-me"),
@@ -30,6 +32,12 @@ def create_app() -> FastAPI:
         https_only=False,
     )
     application.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+    if application.debug:
+        application.mount(
+            "/_dev",
+            StaticFiles(directory=str(STATIC_DIR.parent / "dev")),
+            name="dev_tools",
+        )
     application.include_router(auth_routes.router)
     application.include_router(app_routes.router)
     application.add_exception_handler(LoginRequired, login_required_handler)
