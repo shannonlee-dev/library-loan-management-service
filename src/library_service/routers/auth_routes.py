@@ -52,6 +52,7 @@ def login(
             },
             status_code=401,
         )
+    request.session.clear()
     request.session["user_id"] = user.id
     return RedirectResponse("/app?message=로그인에+성공했습니다.", status_code=303)
 
@@ -95,5 +96,6 @@ def signup(
             },
             status_code=400,
         )
+    request.session.clear()
     request.session["user_id"] = user.id
     return RedirectResponse("/app?message=회원가입에+성공했습니다.", status_code=303)

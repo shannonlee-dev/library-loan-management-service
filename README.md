@@ -6,7 +6,8 @@ FastAPI, SQLAlchemy, Jinja2로 만든 세션 기반 도서 대여 웹 서비스�
 
 ## 핵심 특징
 
-- 회원가입과 PBKDF2 비밀번호 해시 검증
+- 회원가입과 bcrypt 비밀번호 해시 검증 (기존 PBKDF2 계정 호환)
+- GitHub OAuth2 Authorization Code + PKCE 소셜 로그인
 - 로그인 사용자만 접근하는 대여 관리 화면
 - 사용자·도서·대여 기록의 ORM 연관관계
 - 도서 검색, 대여 상태 필터, 대여·반납 상태 전환
@@ -99,6 +100,10 @@ pytest fixture가 매 테스트마다 임시 SQLite DB와 FastAPI `TestClient`�
 
 ## 추가 기능과 오류 계약
 
+- 회원가입: 아이디 영문·숫자·밑줄·하이픈 3~50자, 표시 이름 1~80자,
+  비밀번호 8자 이상·UTF-8 72바이트 이하. bcrypt 솔트가 계정별로 생성됩니다.
+- `/auth/github` → GitHub → `/auth/github/callback`: state·10분 만료·PKCE를 검증합니다.
+  기존 계정을 이메일이나 사용자 이름으로 자동 연결하지 않고, GitHub 고유 ID로 식별합니다.
 - 커스텀 도메인 예외, 404/405, 입력 검증 422, 서버 오류 500에 공통 오류 화면을 제공합니다.
   `Accept: application/json` 요청에는 `{"error": {"status": 404, "message": "..."}}` 형태를 반환합니다.
   내부 예외 내용이나 비밀번호는 응답에 포함하지 않습니다.

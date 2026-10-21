@@ -64,3 +64,13 @@ class Loan(Base):
 
     user: Mapped[User] = relationship(back_populates="loans")
     book: Mapped[Book] = relationship(back_populates="loans")
+
+
+class OAuthIdentity(Base):
+    """Provider subject is independent of editable names and email addresses."""
+
+    __tablename__ = "oauth_identities"
+    provider: Mapped[str] = mapped_column(String(20), primary_key=True)
+    subject: Mapped[str] = mapped_column(String(100), primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    user: Mapped[User] = relationship()
