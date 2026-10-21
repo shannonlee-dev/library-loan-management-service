@@ -3,8 +3,9 @@
 import os
 
 from fastapi import FastAPI
-from fastapi.exceptions import HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
 from library_service.auth.security import LoginRequired
@@ -16,6 +17,8 @@ from library_service.ui.errors import (
     http_error_handler,
     library_error_handler,
     login_required_handler,
+    unexpected_error_handler,
+    validation_error_handler,
 )
 
 
@@ -43,6 +46,8 @@ def create_app() -> FastAPI:
     application.add_exception_handler(LoginRequired, login_required_handler)
     application.add_exception_handler(LibraryError, library_error_handler)
     application.add_exception_handler(HTTPException, http_error_handler)
+    application.exception_handler(RequestValidationError)(validation_error_handler)
+    application.exception_handler(Exception)(unexpected_error_handler)
     return application
 
 
