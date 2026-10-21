@@ -22,7 +22,9 @@ def web_database(tmp_path, monkeypatch):
     monkeypatch.setattr(database, "SessionLocal", sessions)
     monkeypatch.setattr(bootstrap, "engine", engine)
     monkeypatch.setattr(bootstrap, "SessionLocal", sessions)
-    monkeypatch.setenv("SESSION_SECRET_KEY", "isolated-test-session-secret")
+    monkeypatch.setenv(
+        "SESSION_SECRET_KEY", "isolated-test-session-secret-32-characters"
+    )
     try:
         yield sessions
     finally:

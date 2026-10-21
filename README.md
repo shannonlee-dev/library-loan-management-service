@@ -68,7 +68,7 @@ uv run --frozen uvicorn library_service.main:app --host 127.0.0.1 --port 8000
 
 개발 중에는 `make dev`로 실행하면 자동 재시작과 왼쪽 아래 `D` 디버그 버튼이 켜집니다. 버튼을 열면 가려진 현재 경로와 브라우저 오류의 시각·종류·안전한 요약을 확인하고 기록을 지울 수 있습니다. Enter/Space로 열고 Escape로 닫습니다. 오류 원문과 스택, 검색어와 URL query/hash는 수집하지 않습니다. 최근 50개 기록만 현재 문서 메모리에 유지하며 페이지 이동·새로고침 시 초기화합니다. 서버 오류 로그는 터미널에서 확인합니다. 배포 실행에서는 `LIBRARY_ENV`를 설정하지 않거나 `production`으로 두면 UI와 수집기를 로드하지 않고 개발 자산 경로도 제공하지 않습니다.
 
-최초 DB 초기화에서 샘플 도서와 데모 계정 `demo` / `demo1234`를 만듭니다. 이 계정과 현재 쿠키 정책은 실습용 설정입니다.
+개발 환경의 최초 DB 초기화에서 샘플 도서와 데모 계정 `demo` / `demo1234`를 만듭니다. 운영 환경에서는 데모 계정을 생성하지 않으며, HTTPS 전용 쿠키와 32자 이상의 세션 키를 요구합니다. 개발 DB를 운영에 복사하지 마세요.
 
 ## 화면과 데이터 흐름
 
@@ -95,8 +95,41 @@ make build
 
 pytest fixture가 매 테스트마다 임시 SQLite DB와 FastAPI `TestClient`를 제공합니다. 인증·보호 경로·비밀번호 해시·등록·대여·반납·검색·실패 응답을 확인하며 실제 `library.db`는 사용하지 않습니다. 비로그인 변경 요청 거부, 잘못된 입력의 저장 방지, 중복 대여·타인 반납·반복 반납 실패와 관계 삭제 시 대여 기록 정리도 검사합니다.
 
-`make check`는 정적 분석·포맷·문서 검사를, `make test`는 `uv run --frozen pytest -q`로 저장소의 전체 pytest suite를 실행합니다. `make smoke`는 같은 테스트 중 `smoke` 마커가 붙은 HTTP 확인을 선택합니다(`uv run --frozen pytest -q -m smoke`). 테스트는 임시 DB와 모의 HTTP 요청을 사용합니다. 동시 대여 경합·DB 장애·실제 브라우저 배치까지 검증하는 것은 아닙니다.
+`make check`는 정적 분석·포맷·문서 검사를, `make test`는 `uv run --frozen pytest -q`로 저장소의 전체 pytest suite를 실행합니다. `make smoke`는 같은 테스트 중 `smoke` 마커가 붙은 HTTP 확인을 선택합니다(`uv run --frozen pytest -q -m smoke`). 테스트는 임시 DB와 모의 HTTP 요청을 사용합니다. 실제 GitHub 계정 인증과 Railway 운영 환경은 별도 설정 후 검증해야 합니다.
 
+
+## Railway 배포
+
+루트 `Dockerfile`과 `railway.json`을 사용합니다. 잠금 파일로 운영 의존성을 설치하고,
+Railway의 `PORT`로 실행하며 `/healthz`를 상태 확인 경로로 제공합니다.
+
+1. Railway에서 이 GitHub 저장소를 연결한 서비스를 만듭니다.
+2. 해당 서비스에 **Volume**을 연결하고 Mount Path를 `/data`로 설정합니다.
+3. Variables에 다음 값을 설정합니다.
+
+| 변수 | 운영 설정 |
+| --- | --- |
+| `LIBRARY_ENV` | `production` |
+| `LIBRARY_DATABASE_URL` | `sqlite:////data/library.db` |
+| `SESSION_SECRET_KEY` | `python -c "import secrets; print(secrets.token_urlsafe(48))"`로 생성한 값 |
+| `GITHUB_CLIENT_ID` | GitHub OAuth App Client ID |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth App Client Secret |
+| `GITHUB_REDIRECT_URI` | 발급된 HTTPS 도메인 뒤에 `/auth/github/callback`을 붙인 주소 |
+
+4. Deploy 후 Networking → Generate Domain으로 공개 도메인을 발급합니다.
+5. GitHub OAuth App의 Authorization callback URL을 `GITHUB_REDIRECT_URI`와 정확히 일치시킵니다.
+6. 새 도메인에서 회원가입 → 도서 등록 → 검색 → 대여 → 반납을 확인하고,
+   로그아웃 후 GitHub 로그인 및 재로그인을 확인합니다.
+7. 재배포 후에도 계정·도서·대여 기록이 유지되는지 확인하고 실제 공개 URL을 제출합니다.
+
+GitHub 변수가 없으면 일반 회원가입·로그인은 동작하며 소셜 로그인 시 설정 안내가 표시됩니다.
+OAuth 토큰은 DB·브라우저 세션에 저장하지 않습니다. callback 코드가 액세스 로그에 남지 않도록
+컨테이너의 Uvicorn 액세스 로그는 비활성화합니다. 서버 오류 로그는 유지합니다.
+
+SQLite 구성은 단일 서비스 인스턴스용입니다. Volume 없는 배포는 재배포 때 데이터가 사라질 수 있습니다.
+배포 전 Volume 백업을 만들고, 문제 발생 시 이전 Railway Deployment로 되돌리세요.
+새 `oauth_identities` 테이블은 기존 사용자 테이블을 변경하지 않고 생성합니다.
+현재 소스 설정만으로 공개 URL이 발급되지는 않으며, Railway 계정에서 위 배포를 완료해야 합니다.
 
 ## 추가 기능과 오류 계약
 

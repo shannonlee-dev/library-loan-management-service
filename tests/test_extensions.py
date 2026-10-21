@@ -223,3 +223,31 @@ def test_unexpected_error_is_sanitized(client):
     assert response.status_code == 500
     assert response.json()["error"]["status"] == 500
     assert "private-database-password" not in response.text
+
+
+def test_production_cookies_and_no_demo(web_database, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from library_service.main import create_app
+
+    monkeypatch.setenv("LIBRARY_ENV", "production")
+    application = create_app()
+    with web_database() as db:
+        assert db.scalar(select(User).where(User.username == "demo")) is None
+    with TestClient(application, base_url="https://testserver") as production:
+        response = production.post(
+            "/signup",
+            data={
+                "username": "production",
+                "display_name": "독자",
+                "password": "password123",
+            },
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        assert "secure" in response.headers["set-cookie"].lower()
+        assert "httponly" in response.headers["set-cookie"].lower()
+        assert production.get("/app").status_code == 200
+    monkeypatch.setenv("SESSION_SECRET_KEY", "short")
+    with pytest.raises(RuntimeError):
+        create_app()

@@ -1,5 +1,7 @@
 """기존 테이블과 데모 데이터를 준비한다."""
 
+import os
+
 from library_service.core.database import Base, SessionLocal, engine
 from library_service.models import Book
 from library_service.repositories import book_repository, user_repository
@@ -8,6 +10,8 @@ from library_service.services import auth_service
 
 def initialize_database() -> None:
     Base.metadata.create_all(bind=engine)
+    if os.getenv("LIBRARY_ENV") == "production":
+        return
     db = SessionLocal()
     try:
         if user_repository.get_user_by_username(db, "demo") is None:

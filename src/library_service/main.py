@@ -25,15 +25,26 @@ from library_service.ui.errors import (
 
 def create_app() -> FastAPI:
     """기존 초기화 순서·라우터·세션 정책으로 앱을 만든다."""
+    production = os.getenv("LIBRARY_ENV") == "production"
+    secret = os.getenv("SESSION_SECRET_KEY", "development-only-change-me")
+    if production and (
+        len(secret) < 32
+        or secret
+        in {"development-only-change-me", "replace-with-your-own-random-secret"}
+    ):
+        raise RuntimeError(
+            "Production requires a random SESSION_SECRET_KEY of at least 32 characters"
+        )
     initialize_database()
     application = FastAPI(
         title="코드 도서관", debug=os.getenv("LIBRARY_ENV") == "development"
     )
     application.add_middleware(
         SessionMiddleware,
-        secret_key=os.getenv("SESSION_SECRET_KEY", "development-only-change-me"),
+        secret_key=secret,
         same_site="lax",
-        https_only=False,
+        https_only=production,
+        max_age=60 * 60 * 12,
     )
     application.add_middleware(SameOriginMiddleware)
     application.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
@@ -51,6 +62,11 @@ def create_app() -> FastAPI:
     application.add_exception_handler(HTTPException, http_error_handler)
     application.exception_handler(RequestValidationError)(validation_error_handler)
     application.exception_handler(Exception)(unexpected_error_handler)
+
+    @application.get("/healthz", include_in_schema=False)
+    def health():
+        return {"status": "ok"}
+
     return application
 
 
