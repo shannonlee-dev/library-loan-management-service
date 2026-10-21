@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 {% block title %}대여 관리{% endblock %}
 {% block content %}
-  {% if message %}<p class="alert success">{{ message }}</p>{% endif %}
+  <div class="page-intro"><div><p class="eyebrow">YOUR PERSONAL LIBRARY</p><h1>오늘은 어떤 책을 읽을까요?</h1><p class="muted">새로운 이야기를 발견하고, 나만의 독서 기록을 쌓아보세요.</p></div><span class="library-tag">✦ 한 페이지씩, 더 넓은 세상으로</span></div>
+  {% if message %}<p class="alert success" role="status">{{ message }}</p>{% endif %}
 
   <section class="panel">
     <div class="section-heading">
       <div>
         <p class="eyebrow">Catalog</p>
-        <h1>도서 목록과 현재 대여 관계</h1>
+        <h1>서재 둘러보기</h1>
       </div>
       <form class="search" action="/app" method="get">
         <input type="hidden" name="status" value="{{ status }}">
@@ -22,6 +23,7 @@
         {% for book in books %}
           {% set active = book.loans | selectattr("status", "equalto", "borrowed") | list %}
           <article class="book-card">
+            <div class="book-cover" aria-hidden="true"><div class="mini-book"><strong>{{ book.title }}</strong><span>✳</span></div></div>
             <h2>{{ book.title }}</h2>
             <p class="muted">{{ book.author }}</p>
             <p>{{ book.description or "설명 없음" }}</p>
@@ -40,7 +42,7 @@
         {% endfor %}
       </div>
     {% else %}
-      <p class="muted">검색 조건에 맞는 도서가 없습니다.</p>
+      <p class="empty-state">검색 조건에 맞는 도서가 없습니다.</p>
     {% endif %}
   </section>
 
@@ -105,7 +107,7 @@
           </tbody>
         </table>
       {% else %}
-        <p class="muted">조건에 맞는 대여 기록이 없습니다.</p>
+        <p class="empty-state">조건에 맞는 대여 기록이 없습니다.</p>
       {% endif %}
     </div>
   </section>

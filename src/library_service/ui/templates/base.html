@@ -11,9 +11,10 @@
     {% endif %}
   </head>
   <body>
+    <a class="skip-link" href="#main-content">본문으로 건너뛰기</a>
     <header>
       <div class="nav">
-        <a class="brand" href="/">코드 도서관</a>
+        <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">▥</span> 코드 도서관</a>
         <nav>
           {% if current_user %}
             <a href="/app">대여 관리</a>
@@ -28,8 +29,9 @@
         </nav>
       </div>
     </header>
-    <main>
+    <main id="main-content">
       {% block content %}{% endblock %}
     </main>
+    <footer class="footer"><span>코드 도서관 · A SPACE FOR YOUR NEXT CHAPTER</span><span>읽고, 배우고, 연결되다.</span></footer>
   </body>
 </html>

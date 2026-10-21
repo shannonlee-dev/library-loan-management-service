@@ -2,7 +2,7 @@
 {% block title %}회원가입{% endblock %}
 {% block content %}
   <section class="panel narrow">
-    <h1>회원가입</h1>
+    <p class="eyebrow">A NEW CHAPTER</p><h1>나의 서재 만들기</h1><p class="muted">회원가입으로 새로운 발견을 시작하세요.</p>
     <form action="/signup" method="post">
       <label for="username">아이디</label>
       <input id="username" name="username" autocomplete="username" minlength="3" maxlength="50" value="{{ form.username | default('', true) }}" required>
