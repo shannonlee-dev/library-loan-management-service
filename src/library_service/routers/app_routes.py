@@ -14,12 +14,15 @@ router = APIRouter(prefix="/app")
 @router.get("")
 def dashboard(
     request: Request,
-    q: str | None = Query(None),
+    q: str | None = Query(None, max_length=200),
     status: str | None = Query(None),
+    availability: str | None = Query(None),
     current_user: User = Depends(require_user),
     db: Session = Depends(get_db),
 ):
-    books, user, loans = library_service.list_dashboard(db, current_user, q, status)
+    books, user, loans = library_service.list_dashboard(
+        db, current_user, q, status, availability
+    )
     return templates.TemplateResponse(
         request,
         "dashboard.html",
@@ -28,6 +31,7 @@ def dashboard(
             "books": books,
             "loans": sorted(loans, key=lambda loan: loan.id, reverse=True),
             "q": q or "",
+            "availability": availability or "",
             "status": status or "",
             "message": request.query_params.get("message"),
         },

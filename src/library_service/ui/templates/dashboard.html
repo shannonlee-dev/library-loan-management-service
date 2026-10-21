@@ -10,7 +10,9 @@
         <h1>도서 목록과 현재 대여 관계</h1>
       </div>
       <form class="search" action="/app" method="get">
-        <input name="q" value="{{ q }}" placeholder="제목, 저자, 설명 검색">
+        <input type="hidden" name="status" value="{{ status }}">
+        <input aria-label="도서 검색" name="q" value="{{ q }}" placeholder="제목, 저자, 설명 검색">
+        <select name="availability" aria-label="도서 대여 가능 여부"><option value="">모든 도서</option><option value="available" {% if availability == 'available' %}selected{% endif %}>대여 가능</option><option value="borrowed" {% if availability == 'borrowed' %}selected{% endif %}>대여중</option></select>
         <button type="submit">검색</button>
         <a class="button secondary" href="/app">초기화</a>
       </form>
@@ -48,11 +50,11 @@
       <h2>새 도서 등록</h2>
       <form action="/app/books" method="post">
         <label for="title">제목</label>
-        <input id="title" name="title" required>
+        <input id="title" name="title" maxlength="120" required>
         <label for="author">저자</label>
-        <input id="author" name="author" required>
+        <input id="author" name="author" maxlength="120" required>
         <label for="description">설명</label>
-        <textarea id="description" name="description" rows="4"></textarea>
+        <textarea id="description" name="description" maxlength="5000" rows="4"></textarea>
         <div class="actions"><button type="submit">도서 등록</button></div>
       </form>
     </div>
@@ -64,7 +66,8 @@
           <h2>{{ current_user.display_name }}님의 대여 기록</h2>
         </div>
         <form action="/app" method="get">
-          <select name="status">
+          <input type="hidden" name="q" value="{{ q }}"><input type="hidden" name="availability" value="{{ availability }}">
+          <select name="status" aria-label="내 대여 기록 상태">
             <option value="">전체 상태</option>
             <option value="borrowed" {% if status == "borrowed" %}selected{% endif %}>대여중</option>
             <option value="returned" {% if status == "returned" %}selected{% endif %}>반납완료</option>

@@ -7,7 +7,7 @@ import httpx
 import pytest
 from sqlalchemy import select
 
-from library_service.models import User
+from library_service.models import Book, User
 from library_service.models.entities import OAuthIdentity
 from library_service.routers import oauth_routes
 from library_service.services import auth_service
@@ -54,6 +54,23 @@ def test_consistent_errors(client):
     client.post("/login", data={"username": "demo", "password": "demo1234"})
     response = client.post("/app/books/not-an-integer/borrow")
     assert response.status_code == 422 and "입력 형식" in response.text
+    assert client.get("/app?availability=invalid").status_code == 422
+
+
+def test_combined_filters(client, web_database):
+    client.post("/login", data={"username": "demo", "password": "demo1234"})
+    with web_database() as db:
+        book = db.scalar(select(Book).order_by(Book.id))
+        book_id, title = book.id, book.title
+    client.post(f"/app/books/{book_id}/borrow")
+    response = client.get(
+        "/app", params={"q": title, "availability": "available", "status": "returned"}
+    )
+    assert "검색 조건에 맞는 도서가 없습니다" in response.text
+    response = client.get("/app", params={"q": title, "availability": "borrowed"})
+    assert title in response.text
+    response = client.get("/app", params={"q": "%", "status": "returned"})
+    assert "검색 조건에 맞는 도서가 없습니다" in response.text
 
 
 @pytest.fixture

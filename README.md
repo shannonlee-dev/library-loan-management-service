@@ -100,6 +100,8 @@ pytest fixture가 매 테스트마다 임시 SQLite DB와 FastAPI `TestClient`�
 
 ## 추가 기능과 오류 계약
 
+- `/app?q=검색어&availability=available&status=borrowed`: 제목·저자·설명 검색,
+  도서 대여 가능 여부와 내 대여 상태를 조합합니다. 검색의 `%`, `_`는 와일드카드가 아닌 문자로 처리합니다.
 - 회원가입: 아이디 영문·숫자·밑줄·하이픈 3~50자, 표시 이름 1~80자,
   비밀번호 8자 이상·UTF-8 72바이트 이하. bcrypt 솔트가 계정별로 생성됩니다.
 - `/auth/github` → GitHub → `/auth/github/callback`: state·10분 만료·PKCE를 검증합니다.

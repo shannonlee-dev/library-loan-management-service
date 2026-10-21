@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from library_service.models import Loan
 
@@ -29,3 +29,12 @@ def mark_returned(db: Session, loan: Loan) -> Loan:
     db.commit()
     db.refresh(loan)
     return loan
+
+
+def list_user_loans(db: Session, user_id: int, status: str | None = None) -> list[Loan]:
+    statement = (
+        select(Loan).where(Loan.user_id == user_id).options(selectinload(Loan.book))
+    )
+    if status:
+        statement = statement.where(Loan.status == status)
+    return list(db.scalars(statement.order_by(Loan.id.desc())))

@@ -20,15 +20,21 @@ def list_dashboard(
     user: User,
     query: str | None = None,
     loan_status: str | None = None,
+    availability: str | None = None,
 ) -> tuple[list[Book], User, list[Loan]]:
+    if loan_status not in (None, "", "borrowed", "returned") or availability not in (
+        None,
+        "",
+        "available",
+        "borrowed",
+    ):
+        raise LibraryError("올바른 필터를 선택해 주세요.", 422)
     cleaned_query = query.strip() if query else None
-    books = book_repository.list_books_with_loans(db, cleaned_query)
+    books = book_repository.list_books_with_loans(db, cleaned_query, availability)
     user_with_loans = user_repository.get_user_with_loans(db, user.id)
     if user_with_loans is None:
         raise LibraryError("사용자 정보를 찾을 수 없습니다.", 404)
-    loans = list(user_with_loans.loans)
-    if loan_status in {"borrowed", "returned"}:
-        loans = [loan for loan in loans if loan.status == loan_status]
+    loans = loan_repository.list_user_loans(db, user.id, loan_status)
     return books, user_with_loans, loans
 
 
@@ -37,6 +43,8 @@ def create_book(db: Session, title: str, author: str, description: str) -> Book:
     cleaned_author = author.strip()
     if not cleaned_title or not cleaned_author:
         raise LibraryError("도서 제목과 저자는 필수입니다.")
+    if len(cleaned_title) > 120 or len(cleaned_author) > 120 or len(description) > 5000:
+        raise LibraryError("제목·저자는 120자, 설명은 5,000자 이내로 입력하세요.")
     return book_repository.create_book(
         db,
         title=cleaned_title,
