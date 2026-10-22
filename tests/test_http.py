@@ -8,6 +8,13 @@ from library_service.models import Book, Loan, User
 pytestmark = pytest.mark.smoke
 
 
+def test_health_is_public_and_excluded_from_schema(client):
+    response = client.get("/healthz", follow_redirects=False)
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+    assert "/healthz" not in client.get("/openapi.json").json()["paths"]
+
+
 def test_logout_without_login_is_repeatable_and_post_only(client):
     for _ in range(2):
         response = client.post("/logout", follow_redirects=False)

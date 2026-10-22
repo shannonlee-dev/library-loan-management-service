@@ -11,15 +11,6 @@ from library_service.ui.templating import templates
 router = APIRouter()
 
 
-@router.get("/")
-def home(request: Request, current_user: User | None = Depends(get_optional_user)):
-    return templates.TemplateResponse(
-        request,
-        "home.html",
-        {"current_user": current_user},
-    )
-
-
 @router.get("/login")
 def login_form(
     request: Request, current_user: User | None = Depends(get_optional_user)

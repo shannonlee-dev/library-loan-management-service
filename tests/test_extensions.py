@@ -10,7 +10,7 @@ from sqlalchemy import select
 from library_service.models import Book, User
 from library_service.models.entities import OAuthIdentity
 from library_service.routers import oauth_routes
-from library_service.services import auth_service
+from library_service.services import auth_service, oauth_service
 
 
 def test_bcrypt_and_legacy_passwords():
@@ -99,7 +99,7 @@ def test_oauth_login_repeat_and_replay(client, web_database, oauth_config, monke
         assert code == "valid-code" and len(verifier) >= 43
         return {"id": 12345, "login": "demo", "name": "소셜 사용자"}
 
-    monkeypatch.setattr(oauth_routes, "github_profile", profile)
+    monkeypatch.setattr(oauth_service, "github_profile", profile)
     for _ in range(2):
         state = start_oauth(client)
         response = client.get(
@@ -163,7 +163,7 @@ def test_oauth_token_exchange(client, oauth_config, monkeypatch):
         return httpx.Response(200, json={"id": 998, "login": "reader"})
 
     monkeypatch.setattr(
-        oauth_routes.httpx,
+        oauth_service.httpx,
         "AsyncClient",
         lambda **kwargs: original_client(
             transport=httpx.MockTransport(transport), **kwargs
@@ -181,7 +181,7 @@ def test_oauth_token_exchange(client, oauth_config, monkeypatch):
 def test_oauth_provider_failure(client, oauth_config, monkeypatch):
     original_client = httpx.AsyncClient
     monkeypatch.setattr(
-        oauth_routes.httpx,
+        oauth_service.httpx,
         "AsyncClient",
         lambda **kwargs: original_client(
             transport=httpx.MockTransport(lambda request: httpx.Response(503)), **kwargs

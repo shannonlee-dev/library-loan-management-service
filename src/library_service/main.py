@@ -12,7 +12,7 @@ from library_service.auth.middleware import SameOriginMiddleware
 from library_service.auth.security import LoginRequired
 from library_service.bootstrap import initialize_database
 from library_service.core.paths import STATIC_DIR
-from library_service.routers import app_routes, auth_routes, oauth_routes
+from library_service.routers import router
 from library_service.services.library_service import LibraryError
 from library_service.ui.errors import (
     http_error_handler,
@@ -54,18 +54,12 @@ def create_app() -> FastAPI:
             StaticFiles(directory=str(STATIC_DIR.parent / "dev")),
             name="dev_tools",
         )
-    application.include_router(auth_routes.router)
-    application.include_router(app_routes.router)
-    application.include_router(oauth_routes.router)
+    application.include_router(router)
     application.add_exception_handler(LoginRequired, login_required_handler)
     application.add_exception_handler(LibraryError, library_error_handler)
     application.add_exception_handler(HTTPException, http_error_handler)
     application.exception_handler(RequestValidationError)(validation_error_handler)
     application.exception_handler(Exception)(unexpected_error_handler)
-
-    @application.get("/healthz", include_in_schema=False)
-    def health():
-        return {"status": "ok"}
 
     return application
 
