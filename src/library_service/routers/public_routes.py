@@ -14,7 +14,10 @@ def home(request: Request, current_user: User | None = Depends(get_optional_user
     return templates.TemplateResponse(
         request,
         "home.html",
-        {"current_user": current_user},
+        {
+            "current_user": current_user,
+            "message": request.query_params.get("message"),
+        },
     )
 
 

@@ -16,6 +16,10 @@
       <input id="password" name="password" autocomplete="new-password" type="password" minlength="8" required>
       {% if errors.password %}<p class="field-error">{{ errors.password }}</p>{% endif %}
 
+      <label for="password_confirm">비밀번호 확인</label>
+      <input id="password_confirm" name="password_confirm" autocomplete="new-password" type="password" minlength="8" required{% if errors.password_confirm %} aria-invalid="true" aria-describedby="password-confirm-error"{% endif %}>
+      {% if errors.password_confirm %}<p id="password-confirm-error" class="field-error" role="alert">{{ errors.password_confirm }}</p>{% endif %}
+
       <div class="actions">
         <button type="submit">가입하고 시작하기</button>
         <a class="button secondary" href="/login">로그인으로</a>

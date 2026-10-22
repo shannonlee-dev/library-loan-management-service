@@ -9,7 +9,6 @@ from sqlalchemy import select
 
 from library_service.models import Book, User
 from library_service.models.entities import OAuthIdentity
-from library_service.routers import oauth_routes
 from library_service.services import auth_service, oauth_service
 
 
@@ -30,7 +29,12 @@ def test_signup_bounds(client):
     for password in ("short", "한" * 25):
         response = client.post(
             "/signup",
-            data={"username": "bounds", "display_name": "이름", "password": password},
+            data={
+                "username": "bounds",
+                "display_name": "이름",
+                "password": password,
+                "password_confirm": password,
+            },
         )
         assert response.status_code == 400
     response = client.post(
@@ -39,6 +43,7 @@ def test_signup_bounds(client):
             "username": "github:123",
             "display_name": "이름",
             "password": "password123",
+            "password_confirm": "password123",
         },
     )
     assert response.status_code == 400
@@ -142,8 +147,8 @@ def test_oauth_state_cancellation_expiry(client, oauth_config, monkeypatch):
         == 400
     )
     state = start_oauth(client)
-    now = oauth_routes.time.time()
-    monkeypatch.setattr(oauth_routes.time, "time", lambda: now + 601)
+    now = oauth_service.time.time()
+    monkeypatch.setattr(oauth_service.time, "time", lambda: now + 601)
     assert (
         client.get(
             "/auth/github/callback", params={"state": state, "code": "x"}
@@ -241,6 +246,7 @@ def test_production_cookies_and_no_demo(web_database, monkeypatch):
                 "username": "production",
                 "display_name": "독자",
                 "password": "password123",
+                "password_confirm": "password123",
             },
             follow_redirects=False,
         )

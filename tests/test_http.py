@@ -37,6 +37,32 @@ def test_public_pages_and_protected_access(client):
     assert "올바르지" in invalid.text
 
 
+@pytest.mark.parametrize(
+    "confirmation", [{}, {"password_confirm": ""}, {"password_confirm": "different123"}]
+)
+def test_signup_rejects_unconfirmed_password(client, web_database, confirmation):
+    form = client.get("/signup")
+    assert 'name="password_confirm"' in form.text
+    response = client.post(
+        "/signup",
+        data={
+            "username": "confirmuser",
+            "display_name": "확인 사용자",
+            "password": "privatepass123",
+            **confirmation,
+        },
+    )
+    assert response.status_code == 400
+    assert "비밀번호가 일치하지 않습니다." in response.text
+    assert 'value="confirmuser"' in response.text
+    assert 'value="확인 사용자"' in response.text
+    assert "privatepass123" not in response.text
+    assert "different123" not in response.text
+    with web_database() as db:
+        assert db.scalar(select(User).where(User.username == "confirmuser")) is None
+    assert client.get("/app", follow_redirects=False).status_code == 303
+
+
 def test_signup_book_loan_return_and_logout(client, web_database):
     signup = client.post(
         "/signup",
@@ -44,6 +70,7 @@ def test_signup_book_loan_return_and_logout(client, web_database):
             "username": "flowuser",
             "display_name": "흐름 사용자",
             "password": "flowpass123",
+            "password_confirm": "flowpass123",
         },
     )
     assert signup.status_code == 200
@@ -87,6 +114,7 @@ def test_signup_book_loan_return_and_logout(client, web_database):
     )
     logout = client.post("/logout")
     assert logout.status_code == 200 and "로그인" in logout.text
+    assert "로그아웃되었습니다." in logout.text
     assert client.get("/app", follow_redirects=False).status_code == 303
 
 
@@ -104,7 +132,13 @@ def test_failed_signup_and_book_creation_do_not_write(client, web_database):
         user_ids = list(db.scalars(select(User.id)))
         book_ids = list(db.scalars(select(Book.id)))
     signup = client.post(
-        "/signup", data={"username": "x", "display_name": "", "password": "short"}
+        "/signup",
+        data={
+            "username": "x",
+            "display_name": "",
+            "password": "short",
+            "password_confirm": "short",
+        },
     )
     assert signup.status_code == 400
     client.post("/login", data={"username": "demo", "password": "demo1234"})
@@ -130,6 +164,7 @@ def test_http_loan_failures_preserve_ownership_and_status(client, web_database):
             "username": "another",
             "display_name": "다른 사용자",
             "password": "password123",
+            "password_confirm": "password123",
         },
     )
     assert client.post(f"/app/books/{book_id}/borrow").status_code == 400

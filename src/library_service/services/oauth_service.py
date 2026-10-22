@@ -1,7 +1,11 @@
 """GitHub 인증 제공자 통신과 외부 계정 조회·생성."""
 
+import base64
+import hashlib
 import os
 import secrets
+import time
+from urllib.parse import urlencode
 
 import httpx
 from sqlalchemy.exc import IntegrityError
@@ -84,3 +88,50 @@ def get_or_create_user_id(db: Session, profile: dict) -> int:
                     "계정을 생성하지 못했습니다. 다시 시도해 주세요.", 409
                 )
     return identity.user_id
+
+
+def begin_login() -> tuple[str, dict]:
+    """인증 URL과 세션에 보관할 일회성 검증 정보를 생성한다."""
+    client_id, _, redirect_uri = settings()
+    state = secrets.token_urlsafe(32)
+    verifier = secrets.token_urlsafe(48)
+    pending = {"state": state, "verifier": verifier, "at": time.time()}
+    challenge = (
+        base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest())
+        .rstrip(b"=")
+        .decode()
+    )
+    authorization_url = "https://github.com/login/oauth/authorize?" + urlencode(
+        {
+            "client_id": client_id,
+            "redirect_uri": redirect_uri,
+            "state": state,
+            "code_challenge": challenge,
+            "code_challenge_method": "S256",
+        }
+    )
+    return authorization_url, pending
+
+
+async def complete_login(
+    db: Session,
+    pending: dict | None,
+    state: str,
+    code: str | None,
+    error: str | None,
+) -> int:
+    """콜백을 검증하고 인증된 외부 계정의 사용자 ID를 반환한다."""
+    if (
+        not pending
+        or not secrets.compare_digest(state, pending["state"])
+        or time.time() - pending["at"] > 600
+    ):
+        raise LibraryError(
+            "로그인 요청이 만료되었거나 유효하지 않습니다. 다시 시작해 주세요.", 400
+        )
+    if error or not code:
+        raise LibraryError(
+            "GitHub 로그인이 취소되었습니다. 다시 시도할 수 있습니다.", 400
+        )
+    profile = await github_profile(code, pending["verifier"])
+    return get_or_create_user_id(db, profile)

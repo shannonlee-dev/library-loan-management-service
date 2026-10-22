@@ -24,8 +24,8 @@ FastAPI, SQLAlchemy, Jinja2로 만든 세션 기반 도서 대여 웹 서비스�
 | `src/library_service/main.py` | 앱 생성과 라우터·예외 처리 등록 |
 | `src/library_service/bootstrap.py`, `src/library_service/core/` | 초기 데이터 생성·DB 연결·파일 경로 |
 | `src/library_service/auth/` | 세션 사용자 조회와 보호 경로 의존성 |
-| `src/library_service/routers/` | 공개 화면·인증·대시보드·도서·대여별 HTTP 라우터 |
-| `src/library_service/services/` | 인증·대여 검증과 상태 변경 |
+| `src/library_service/routers/` | 공개 화면·일반 인증·OAuth·대여 관리의 HTTP 입력, 세션, 응답 처리 |
+| `src/library_service/services/` | 회원가입 조건·OAuth 검증·대여 규칙과 상태 변경 |
 | `src/library_service/repositories/`, `src/library_service/models/` | DB 접근과 관계 매핑 |
 | `src/library_service/ui/templates/`, `src/library_service/ui/static/` | 서버 렌더링 화면과 CSS |
 | `tests/test_http.py`, `tests/conftest.py` | pytest HTTP 흐름·임시 DB fixture |

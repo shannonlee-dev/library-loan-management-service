@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}코드 도서관 · 다음 이야기를 발견하세요{% endblock %}
 {% block content %}
+{% if message %}<p class="alert success" role="status">{{ message }}</p>{% endif %}
 <section class="hero">
   <div class="hero-copy">
     <p class="eyebrow"><span class="live-dot"></span> YOUR NEXT CHAPTER</p>

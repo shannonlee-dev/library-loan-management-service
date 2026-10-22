@@ -43,7 +43,10 @@ def register_user(
     username: str,
     display_name: str,
     password: str,
+    password_confirm: str,
 ) -> tuple[User | None, dict[str, str]]:
+    if password != password_confirm:
+        return None, {"password_confirm": "비밀번호가 일치하지 않습니다."}
     errors: dict[str, str] = {}
     cleaned_username = username.strip()
     cleaned_display_name = display_name.strip()

@@ -73,9 +73,12 @@ def signup(
     username: str = Form(""),
     display_name: str = Form(""),
     password: str = Form(""),
+    password_confirm: str = Form(""),
     db: Session = Depends(get_db),
 ):
-    user, errors = auth_service.register_user(db, username, display_name, password)
+    user, errors = auth_service.register_user(
+        db, username, display_name, password, password_confirm
+    )
     if errors:
         return templates.TemplateResponse(
             request,
