@@ -4,6 +4,8 @@
 
 FastAPI, SQLAlchemy, Jinja2로 만든 세션 기반 도서 대여 웹 서비스입니다. 회원가입·로그인 후 도서를 등록하고 대여·반납하며 관계형 기록을 조회합니다.
 
+공개 서비스: [코드 도서관](https://library-loan-management-service.onrender.com) — 2026-10-22 Render Free Web Service 첫 배포 완료(`Deploy succeeded | Live`).
+
 ## 핵심 특징
 
 - 회원가입과 bcrypt 비밀번호 해시 검증 (기존 PBKDF2 계정 호환)
@@ -95,41 +97,81 @@ make build
 
 pytest fixture가 매 테스트마다 임시 SQLite DB와 FastAPI `TestClient`를 제공합니다. 인증·보호 경로·비밀번호 해시·등록·대여·반납·검색·실패 응답을 확인하며 실제 `library.db`는 사용하지 않습니다. 비로그인 변경 요청 거부, 잘못된 입력의 저장 방지, 중복 대여·타인 반납·반복 반납 실패와 관계 삭제 시 대여 기록 정리도 검사합니다.
 
-`make check`는 정적 분석·포맷·문서 검사를, `make test`는 `uv run --frozen pytest -q`로 저장소의 전체 pytest suite를 실행합니다. `make smoke`는 같은 테스트 중 `smoke` 마커가 붙은 HTTP 확인을 선택합니다(`uv run --frozen pytest -q -m smoke`). 테스트는 임시 DB와 모의 HTTP 요청을 사용합니다. 실제 GitHub 계정 인증과 Railway 운영 환경은 별도 설정 후 검증해야 합니다.
+`make check`는 정적 분석·포맷·문서 검사를, `make test`는 `uv run --frozen pytest -q`로 저장소의 전체 pytest suite를 실행합니다. `make smoke`는 같은 테스트 중 `smoke` 마커가 붙은 HTTP 확인을 선택합니다(`uv run --frozen pytest -q -m smoke`). 테스트는 임시 DB와 모의 HTTP 요청을 사용합니다. Render 첫 배포 성공은 대시보드에서 확인했으며, 공개 서비스의 회원가입·대여·반납 흐름과 실제 GitHub 계정 인증은 별도로 검증합니다.
 
 
-## Railway 배포
+## Render 배포
 
-루트 `Dockerfile`과 `railway.json`을 사용합니다. 잠금 파일로 운영 의존성을 설치하고,
-Railway의 `PORT`로 실행하며 `/healthz`를 상태 확인 경로로 제공합니다.
+2026-10-22 Render 대시보드에서 첫 배포의 `Deploy succeeded | Live` 상태를 확인했습니다.
+배포 소스는 `main` 브랜치의 커밋 `7ab9080`입니다. 해당 커밋 제목에 Railway가 포함되어 있지만,
+실제 배포 플랫폼은 Render입니다. 저장소의 `railway.json`은 Railway용 설정이며 Render에서는 사용하지 않습니다.
 
-1. Railway에서 이 GitHub 저장소를 연결한 서비스를 만듭니다.
-2. 해당 서비스에 **Volume**을 연결하고 Mount Path를 `/data`로 설정합니다.
-3. Variables에 다음 값을 설정합니다.
+| 항목 | 현재 설정 |
+| --- | --- |
+| 공개 URL | <https://library-loan-management-service.onrender.com> |
+| 서비스 유형 | Free Web Service |
+| Language | Docker |
+| Dockerfile Path | `./Dockerfile` |
+| Root Directory / Docker Command | 비워 둠; 루트 디렉터리와 Dockerfile의 기본 실행 명령 사용 |
+| Health Check Path | `/healthz` |
+| DB | SQLite, `/app/library.db` (영구 디스크 없음) |
 
-| 변수 | 운영 설정 |
+루트 `Dockerfile`이 잠금 파일로 운영 의존성을 설치하고, Render의 `PORT`로 Uvicorn을 실행합니다.
+`/healthz`는 서버 상태 확인 경로이며 정상 응답은 `{"status":"ok"}`입니다.
+[상태 확인 주소](https://library-loan-management-service.onrender.com/healthz)에서 응답을 확인할 수 있습니다.
+
+### 배포 재현
+
+1. Render에서 **New → Web Service**를 누르고 GitHub 저장소를 연결합니다.
+2. 배포할 브랜치를 선택하고 **Language: Docker**, **Compute: Free**로 설정합니다.
+3. **Environment Variables**에 다음 세 값을 입력합니다.
+
+| Key | Value |
 | --- | --- |
 | `LIBRARY_ENV` | `production` |
-| `LIBRARY_DATABASE_URL` | `sqlite:////data/library.db` |
-| `SESSION_SECRET_KEY` | `python -c "import secrets; print(secrets.token_urlsafe(48))"`로 생성한 값 |
+| `LIBRARY_DATABASE_URL` | `sqlite:////app/library.db` |
+| `SESSION_SECRET_KEY` | 32자 이상의 무작위 비밀키 |
+
+세션 비밀키는 다음 명령으로 생성합니다. 실제 비밀키는 Render 환경 변수에만 저장하고 문서나 저장소에 넣지 않습니다.
+
+```bash
+python3 -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+4. **Advanced → Health Check Path**에 `/healthz`를 입력합니다.
+5. **Deploy web service**를 누르고 `Live` 상태와 공개 URL을 확인합니다.
+
+### 무료 배포의 데이터 보관 범위
+
+현재 배포는 실습·시연용입니다. Free 서비스는 15분간 요청이 없으면 절전 상태로 들어가며,
+다음 접속 때 다시 켜지는 데 약 1분이 걸릴 수 있습니다.
+**재배포·재시작·절전 시 SQLite 파일이 삭제되어 회원·도서·대여 기록이 초기화됩니다.**
+Free 서비스에는 영구 디스크를 연결할 수 없습니다. 자세한 제한은 [Render 공식 문서](https://render.com/docs/free)를 참고하세요.
+
+데이터를 계속 보관하려면 유료 Web Service에 영구 디스크를 `/data`로 연결하고
+`LIBRARY_DATABASE_URL=sqlite:////data/library.db`로 변경해야 합니다.
+이 변경만으로 기존 `/app/library.db` 데이터가 자동 이전되지는 않습니다.
+SQLite 구성은 단일 서비스 인스턴스용입니다.
+
+### 공개 서비스 확인과 GitHub 로그인
+
+배포 성공과 사용자 기능 검증은 구분합니다. 공개 주소에서 회원가입 → 로그인 → 도서 등록 → 검색 → 대여 → 반납 → 로그아웃을 확인합니다.
+운영 모드에서는 데모 계정을 만들지 않으므로 직접 회원가입합니다.
+
+GitHub 로그인을 사용하려면 아래 변수를 추가하고 실제 계정으로 로그인·재로그인을 확인합니다.
+
+| 변수 | 설정 |
+| --- | --- |
 | `GITHUB_CLIENT_ID` | GitHub OAuth App Client ID |
 | `GITHUB_CLIENT_SECRET` | GitHub OAuth App Client Secret |
-| `GITHUB_REDIRECT_URI` | 발급된 HTTPS 도메인 뒤에 `/auth/github/callback`을 붙인 주소 |
+| `GITHUB_REDIRECT_URI` | `https://library-loan-management-service.onrender.com/auth/github/callback` |
 
-4. Deploy 후 Networking → Generate Domain으로 공개 도메인을 발급합니다.
-5. GitHub OAuth App의 Authorization callback URL을 `GITHUB_REDIRECT_URI`와 정확히 일치시킵니다.
-6. 새 도메인에서 회원가입 → 도서 등록 → 검색 → 대여 → 반납을 확인하고,
-   로그아웃 후 GitHub 로그인 및 재로그인을 확인합니다.
-7. 재배포 후에도 계정·도서·대여 기록이 유지되는지 확인하고 실제 공개 URL을 제출합니다.
-
+GitHub OAuth App의 Authorization callback URL은 `GITHUB_REDIRECT_URI`와 정확히 일치시킵니다.
+별도 도메인으로 배포할 때는 두 주소를 함께 변경합니다.
 GitHub 변수가 없으면 일반 회원가입·로그인은 동작하며 소셜 로그인 시 설정 안내가 표시됩니다.
 OAuth 토큰은 DB·브라우저 세션에 저장하지 않습니다. callback 코드가 액세스 로그에 남지 않도록
 컨테이너의 Uvicorn 액세스 로그는 비활성화합니다. 서버 오류 로그는 유지합니다.
-
-SQLite 구성은 단일 서비스 인스턴스용입니다. Volume 없는 배포는 재배포 때 데이터가 사라질 수 있습니다.
-배포 전 Volume 백업을 만들고, 문제 발생 시 이전 Railway Deployment로 되돌리세요.
 새 `oauth_identities` 테이블은 기존 사용자 테이블을 변경하지 않고 생성합니다.
-현재 소스 설정만으로 공개 URL이 발급되지는 않으며, Railway 계정에서 위 배포를 완료해야 합니다.
 
 ## 추가 기능과 오류 계약
 
