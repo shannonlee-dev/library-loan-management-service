@@ -108,7 +108,7 @@ uv run --frozen uvicorn library_service.main:app --host 127.0.0.1 --port 8000
 | --- | --- | --- |
 | `auth/` | 요청의 세션 사용자 확인과 로그인 요구, 교차 출처 변경 요청 검사 | `get_optional_user`, `require_user`, `SameOriginMiddleware` |
 | `services/` | 인증 검증과 도서 대여의 업무 규칙 | 비밀번호 검증, 중복 대여·소유권·반납 상태 검사 |
-| `repositories/` | SQLAlchemy 조회·추가·변경·저장 | 관계 사전 로딩, `commit`, `refresh` |
+| `repositories/` | SQLAlchemy 조회·추가·변경·저장 | 관계 사전 로딩, `add`, `flush` |
 | `models/` | 테이블과 객체 관계 정의 | `User`, `Book`, `Loan`, `OAuthIdentity` |
 | `routers/` | HTTP 입력 수신과 서비스 호출, 렌더링·리다이렉트 선택 | 폼 입력 처리, 대시보드 응답 |
 | `ui/` | HTML 템플릿과 공통 오류 응답 | `dashboard.html`, 오류 화면·JSON 선택 |
@@ -146,7 +146,7 @@ uv run --frozen uvicorn library_service.main:app --host 127.0.0.1 --port 8000
 
 즉, 서비스는 “어떤 조건에서 변경 가능한가”를 결정하고 저장소는 “변경을 어떻게 저장하는가”를 담당합니다. 라우터는 인증된 사용자와 기록 ID를 전달한 뒤 응답을 만듭니다. 덕분에 향후 JSON API를 추가해도 동일한 업무 규칙을 재사용할 수 있습니다.
 
-현재 트랜잭션 커밋은 저장소 함수에서 수행합니다. 여러 저장소 변경을 하나의 작업으로 묶어야 한다면 서비스나 작업 단위에서 트랜잭션을 관리하도록 조정할 수 있습니다.
+변경 서비스가 작업 성공 시 `commit()`, 예외 발생 시 `rollback()`을 수행합니다. 저장소는 조회·변경·`flush()`만 하므로 여러 저장소 변경을 한 서비스 작업에 묶을 수 있습니다. 데모 사용자와 도서 초기화도 하나의 트랜잭션으로 처리합니다. 변경 서비스는 전달받은 세션의 트랜잭션을 완료하므로, 여러 작업을 원자적으로 묶을 때는 서비스를 연속 호출하지 않고 하나의 상위 서비스에서 저장소 호출들을 조합합니다.
 
 **코드 근거:** [대여 서비스의 return_loan](src/library_service/services/library_service.py), [대여 저장소의 mark_returned](src/library_service/repositories/loan_repository.py), [반납 라우트](src/library_service/routers/app_routes.py).
 

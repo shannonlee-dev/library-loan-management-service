@@ -28,6 +28,5 @@ def create_user(
         username=username, display_name=display_name, password_hash=password_hash
     )
     db.add(user)
-    db.commit()
-    db.refresh(user)
+    db.flush()
     return user

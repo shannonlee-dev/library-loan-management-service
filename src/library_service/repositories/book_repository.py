@@ -40,6 +40,5 @@ def get_book_with_loans(db: Session, book_id: int) -> Book | None:
 def create_book(db: Session, title: str, author: str, description: str) -> Book:
     book = Book(title=title, author=author, description=description)
     db.add(book)
-    db.commit()
-    db.refresh(book)
+    db.flush()
     return book

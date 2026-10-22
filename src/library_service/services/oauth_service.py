@@ -79,6 +79,8 @@ def get_or_create_user_id(db: Session, profile: dict) -> int:
         identity = OAuthIdentity(provider="github", subject=identity_key[1], user=user)
         db.add(identity)
         try:
+            db.flush()
+            user_id = identity.user_id
             db.commit()
         except IntegrityError:
             db.rollback()
@@ -87,6 +89,11 @@ def get_or_create_user_id(db: Session, profile: dict) -> int:
                 raise LibraryError(
                     "계정을 생성하지 못했습니다. 다시 시도해 주세요.", 409
                 )
+        except Exception:
+            db.rollback()
+            raise
+        else:
+            return user_id
     return identity.user_id
 
 

@@ -39,35 +39,57 @@ def list_dashboard(
 
 
 def create_book(db: Session, title: str, author: str, description: str) -> Book:
-    cleaned_title = title.strip()
-    cleaned_author = author.strip()
-    if not cleaned_title or not cleaned_author:
-        raise LibraryError("도서 제목과 저자는 필수입니다.")
-    if len(cleaned_title) > 120 or len(cleaned_author) > 120 or len(description) > 5000:
-        raise LibraryError("제목·저자는 120자, 설명은 5,000자 이내로 입력하세요.")
-    return book_repository.create_book(
-        db,
-        title=cleaned_title,
-        author=cleaned_author,
-        description=description.strip(),
-    )
+    try:
+        cleaned_title = title.strip()
+        cleaned_author = author.strip()
+        if not cleaned_title or not cleaned_author:
+            raise LibraryError("도서 제목과 저자는 필수입니다.")
+        if (
+            len(cleaned_title) > 120
+            or len(cleaned_author) > 120
+            or len(description) > 5000
+        ):
+            raise LibraryError("제목·저자는 120자, 설명은 5,000자 이내로 입력하세요.")
+        book = book_repository.create_book(
+            db,
+            title=cleaned_title,
+            author=cleaned_author,
+            description=description.strip(),
+        )
+        db.commit()
+        return book
+    except Exception:
+        db.rollback()
+        raise
 
 
 def borrow_book(db: Session, user: User, book_id: int) -> Loan:
-    book = book_repository.get_book_with_loans(db, book_id)
-    if book is None:
-        raise LibraryError("요청한 도서를 찾을 수 없습니다.", 404)
-    if loan_repository.get_active_loan_for_book(db, book_id):
-        raise LibraryError("이미 대여 중인 도서입니다.")
-    return loan_repository.create_loan(db, user_id=user.id, book_id=book_id)
+    try:
+        book = book_repository.get_book_with_loans(db, book_id)
+        if book is None:
+            raise LibraryError("요청한 도서를 찾을 수 없습니다.", 404)
+        if loan_repository.get_active_loan_for_book(db, book_id):
+            raise LibraryError("이미 대여 중인 도서입니다.")
+        loan = loan_repository.create_loan(db, user_id=user.id, book_id=book_id)
+        db.commit()
+        return loan
+    except Exception:
+        db.rollback()
+        raise
 
 
 def return_loan(db: Session, user: User, loan_id: int) -> Loan:
-    loan = loan_repository.get_loan(db, loan_id)
-    if loan is None:
-        raise LibraryError("대여 기록을 찾을 수 없습니다.", 404)
-    if loan.user_id != user.id:
-        raise LibraryError("본인의 대여 기록만 반납할 수 있습니다.", 403)
-    if loan.status != "borrowed":
-        raise LibraryError("이미 반납 완료된 도서입니다.")
-    return loan_repository.mark_returned(db, loan)
+    try:
+        loan = loan_repository.get_loan(db, loan_id)
+        if loan is None:
+            raise LibraryError("대여 기록을 찾을 수 없습니다.", 404)
+        if loan.user_id != user.id:
+            raise LibraryError("본인의 대여 기록만 반납할 수 있습니다.", 403)
+        if loan.status != "borrowed":
+            raise LibraryError("이미 반납 완료된 도서입니다.")
+        loan_repository.mark_returned(db, loan)
+        db.commit()
+        return loan
+    except Exception:
+        db.rollback()
+        raise

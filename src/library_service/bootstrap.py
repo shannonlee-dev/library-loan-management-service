@@ -12,8 +12,7 @@ def initialize_database() -> None:
     Base.metadata.create_all(bind=engine)
     if os.getenv("LIBRARY_ENV") == "production":
         return
-    db = SessionLocal()
-    try:
+    with SessionLocal.begin() as db:
         if user_repository.get_user_by_username(db, "demo") is None:
             user_repository.create_user(
                 db,
@@ -34,5 +33,3 @@ def initialize_database() -> None:
                 author="데이터 연구회",
                 description="ORM 연관관계를 살펴보기 위한 샘플 도서",
             )
-    finally:
-        db.close()

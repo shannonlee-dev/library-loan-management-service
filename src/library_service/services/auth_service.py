@@ -69,7 +69,11 @@ def register_user(
             display_name=cleaned_display_name,
             password_hash=hash_password(password),
         )
+        db.commit()
     except IntegrityError:
         db.rollback()
         return None, {"username": "이미 사용 중인 아이디입니다."}
+    except Exception:
+        db.rollback()
+        raise
     return user, {}

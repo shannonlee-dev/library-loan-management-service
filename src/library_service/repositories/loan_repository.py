@@ -18,16 +18,14 @@ def get_active_loan_for_book(db: Session, book_id: int) -> Loan | None:
 def create_loan(db: Session, user_id: int, book_id: int) -> Loan:
     loan = Loan(user_id=user_id, book_id=book_id, status="borrowed")
     db.add(loan)
-    db.commit()
-    db.refresh(loan)
+    db.flush()
     return loan
 
 
 def mark_returned(db: Session, loan: Loan) -> Loan:
     loan.status = "returned"
     loan.returned_at = datetime.utcnow()
-    db.commit()
-    db.refresh(loan)
+    db.flush()
     return loan
 
 
