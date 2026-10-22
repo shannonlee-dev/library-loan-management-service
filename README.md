@@ -86,6 +86,52 @@ uv run --frozen uvicorn library_service.main:app --host 127.0.0.1 --port 8000
 
 반납 시 기록 존재 여부, 소유권, `borrowed` 상태를 확인한 뒤 `returned` 상태와 반납 시각을 저장합니다. 상세 설명은 [서비스 설계](docs/service-design.md)에 있습니다.
 
+## ERD
+
+`src/library_service/models/entities.py`의 SQLAlchemy 모델을 기준으로 작성했습니다.
+
+```mermaid
+erDiagram
+    users ||--o{ loans : borrows
+    books ||--o{ loans : records
+    users ||--o{ oauth_identities : authenticates
+
+    users {
+        int id PK
+        varchar(50) username UK
+        varchar(80) display_name
+        varchar(255) password_hash
+        datetime created_at
+    }
+
+    books {
+        int id PK
+        varchar(120) title
+        varchar(120) author
+        text description
+        datetime created_at
+    }
+
+    oauth_identities {
+        varchar(20) provider PK
+        varchar(100) subject PK
+        int user_id FK
+    }
+
+    loans {
+        int id PK
+        int user_id FK
+        int book_id FK
+        varchar(20) status "borrowed 또는 returned"
+        datetime borrowed_at
+        datetime returned_at "NULL 허용"
+    }
+```
+
+사용자와 도서는 각각 대여 기록을 0개 이상 가질 수 있고, 각 대여 기록은 사용자 1명과 도서 1권에 연결됩니다. `returned_at`을 제외한 모든 컬럼은 NULL을 허용하지 않습니다.
+
+`oauth_identities`는 GitHub 등 외부 인증 정보를 사용자에 연결하며, `provider`와 `subject`를 복합 기본 키로 사용합니다.
+
 ## 검증
 
 ```bash
